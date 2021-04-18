@@ -9,6 +9,12 @@ from common import GaussianMixture
 
 def gaussian(X: np.ndarray, mean: np.ndarray, var: float) -> float:
     """Computes the probablity of vector X under a Gaussian Distribution
+    Function supports both single vector and tiled vector
+    Case1: When X is vector
+        gaussian() returns a float i.e probability of that vector under normal distribution
+    Case2: When X is a (K, d) tiled vector
+        gaussian() returns a (K,) array of probabilities of untiled vector X for each mixture component
+        under a normal distribution
 
     Args:
         X: (d, ) array or (K, d) tiled-array holding the vector's coordinates
@@ -18,11 +24,16 @@ def gaussian(X: np.ndarray, mean: np.ndarray, var: float) -> float:
     Returns:
         prob: float or (K,) array of the probability
     """
-    d = len(X)
-    log_prob = -d / 2.0 * np.log(2 * np.pi * var)
-    if X.ndim >= 2:
+    # Check if X is a tiled array
+    if X.ndim == 2:
+        d = X.shape[1]
+        log_prob = -d / 2.0 * np.log(2 * np.pi * var)
+        # Sum along axis = 1
         log_prob -= 0.5 * ((X - mean)**2).sum(axis=1) / var
     else:
+        d = len(X)
+        log_prob = -d / 2.0 * np.log(2 * np.pi * var)
+        # there's only one axis
         log_prob -= 0.5 * ((X - mean)**2).sum() / var
     return np.exp(log_prob)
 
