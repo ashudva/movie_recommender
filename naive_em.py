@@ -1,6 +1,6 @@
 """Mixture model using EM"""
 from operator import pos
-from typing import Tuple
+from typing import AsyncIterable, Tuple
 from matplotlib.pyplot import axis
 import numpy as np
 from numpy.core.fromnumeric import var
@@ -59,6 +59,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     # Log likelihood
     ll = 0
     for i in range(n):
+        # tiled vector = K times repeats vector X[i] along axis-0 and 1 times along axis-1
         tiled_vector = np.tile(X[i], (K, 1))
         post[i, :] = mixture.p * \
             gaussian(tiled_vector, mixture.mu, mixture.var)
@@ -73,7 +74,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
 
 def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
     """M-step: Updates the gaussian mixture by maximizing the log-likelihood
-    of the weighted dataset
+    of the weighted dataset.
 
     Args:
         X: (n, d) array holding the data
@@ -83,6 +84,20 @@ def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
     Returns:
         GaussianMixture: the new gaussian mixture
     """
+    n, K = post.shape
+    d = X.shape[0]
+    # n_hat: (K, 1) array of expected no. of points in each component
+    n_hat = post.sum(axis=0)
+    p = n_hat / n  # (K, 1) mixture weights
+    # Updated mus: [K, n] @ [n, d] -> [K, d]
+    # taking the advantage numpy broadcasting
+    mu = post.T @ X / n_hat
+    var = np.zeros(K)
+    for j in range(K):
+        sse = ((X - mu[j])**2).sum(axis=1) @ post[:, j]
+        var[j] = sse / (d * n_hat[j])
+
+    return GaussianMixture(mu, var, p)
 
 
 def run(X: np.ndarray, mixture: GaussianMixture,
@@ -100,4 +115,13 @@ def run(X: np.ndarray, mixture: GaussianMixture,
             for all components for all examples
         float: log-likelihood of the current assignment
     """
-    raise NotImplementedError
+    c = 1e-6
+    prev_ll = None
+    ll = None
+
+    while (prev_ll is None or prev_ll - ll >= c * np.abs(ll)):
+        prev_ll = ll
+        post, ll = estep(X, mixture)
+        mixture = mstep(X, post)
+
+    return mixture, post, ll
