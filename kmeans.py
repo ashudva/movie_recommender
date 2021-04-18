@@ -3,7 +3,8 @@ from typing import Tuple
 import numpy as np
 from common import GaussianMixture
 
-
+# Function definition is written in type-annotated form
+# to ensure correctness of function
 def estep(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
     """E-step: Assigns each datapoint to the gaussian component with the
     closest mean
@@ -45,7 +46,11 @@ def mstep(X: np.ndarray, post: np.ndarray) -> Tuple[GaussianMixture, float]:
     n, d = X.shape
     _, K = post.shape
 
+    # n_hat is the no. of data points assigned to each mixture
+    # shape = (K, )
     n_hat = post.sum(axis=0)
+    # Mixture wieghts
+    # shape = (K, 1)
     p = n_hat / n
 
     cost = 0
@@ -71,10 +76,10 @@ def run(X: np.ndarray, mixture: GaussianMixture,
             for all components for all examples
 
     Returns:
-        GaussianMixture: the new gaussian mixture
-        np.ndarray: (n, K) array holding the soft counts
+        mixture - GaussianMixture: the new gaussian mixture
+        post - np.ndarray: (n, K) array holding the soft counts
             for all components for all examples
-        float: distortion cost of the current assignment
+        cost - float: distortion cost of the current assignment
     """
 
     prev_cost = None
