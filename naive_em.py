@@ -1,8 +1,30 @@
 """Mixture model using EM"""
+from operator import pos
 from typing import Tuple
+from matplotlib.pyplot import axis
 import numpy as np
+from numpy.core.fromnumeric import var
 from common import GaussianMixture
 
+
+def gaussian(X: np.ndarray, mean: np.ndarray, var: float) -> float:
+    """Computes the probablity of vector X under a Gaussian Distribution
+
+    Args:
+        X: (d, ) array or (K, d) tiled-array holding the vector's coordinates
+        mean: (d, ) array or (K, d) array of mean of the gaussian
+        var: variance or (K,) array of variance of the gaussian
+
+    Returns:
+        prob: float or (K,) array of the probability
+    """
+    d = len(X)
+    log_prob = -d / 2.0 * np.log(2 * np.pi * var)
+    if X.ndim >= 2:
+        log_prob -= 0.5 * ((X - mean)**2).sum(axis=1) / var
+    else:
+        log_prob -= 0.5 * ((X - mean)**2).sum() / var
+    return np.exp(log_prob)
 
 
 def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
@@ -17,7 +39,25 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
             for all components for all examples
         float: log-likelihood of the assignment
     """
-    raise NotImplementedError
+    n, _ = X.shape
+    K, _ = mixture.mu.shape
+
+    # Posterior probabilities
+    post = np.zeros((n, K), dtype=np.float)
+
+    # Log likelihood
+    ll = 0
+    for i in range(n):
+        tiled_vector = np.tile(X[i], (K, 1))
+        post[i, :] = mixture.p * \
+            gaussian(tiled_vector, mixture.mu, mixture.var)
+        likelihood = post[i].sum()
+        post[i] /= likelihood
+        ll += np.log(likelihood)
+
+    return post, ll
+
+
 
 
 def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
@@ -32,7 +72,6 @@ def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
     Returns:
         GaussianMixture: the new gaussian mixture
     """
-    raise NotImplementedError
 
 
 def run(X: np.ndarray, mixture: GaussianMixture,
