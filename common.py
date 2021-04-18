@@ -46,7 +46,7 @@ def init(X: np.ndarray, K: int,
 
 
 def plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
-         title: str):
+         title: str) -> None:
     """Plots the mixture model for 2D data"""
     _, K = post.shape
 
@@ -79,6 +79,47 @@ def plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
             mu[0], mu[1], sigma)
         ax.text(mu[0], mu[1], legend)
     plt.axis('equal')
+    plt.show()
+
+
+def em_plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
+            title: str, ll_history: list) -> None:
+    """Plots the mixture model for 2D data"""
+    _, K = post.shape
+
+    percent = post / post.sum(axis=1).reshape(-1, 1)
+    fig, ax = plt.subplots(1, 2, figsize=(14, 6))
+    fig.suptitle(title, fontweight='bold')
+    ax[0].set_title("K- Gaussian Mixtures")
+    ax[1].set_title("EM Convergence Curve")
+    ax[0].set_xlim((-20, 20))
+    ax[0].set_ylim((-20, 20))
+    r = 0.25
+    color = ["r", "b", "k", "y", "m", "c"]
+    for i, point in enumerate(X):
+        theta = 0
+        for j in range(K):
+            offset = percent[i, j] * 360
+            arc = Arc(point,
+                      r,
+                      r,
+                      0,
+                      theta,
+                      theta + offset,
+                      edgecolor=color[j])
+            ax[0].add_patch(arc)
+            theta += offset
+    for j in range(K):
+        mu = mixture.mu[j]
+        sigma = np.sqrt(mixture.var[j])
+        circle = Circle(mu, sigma, color=color[j], fill=False)
+        ax[0].add_patch(circle)
+        legend = "mu = ({:0.2f}, {:0.2f})\n stdv = {:0.2f}".format(
+            mu[0], mu[1], sigma)
+        ax[0].text(mu[0], mu[1], legend)
+    ax[1].plot(ll_history, "-")
+    ax[1].set_xlabel("Iteration")
+    ax[1].set_ylabel("Log Likelihood")
     plt.show()
 
 

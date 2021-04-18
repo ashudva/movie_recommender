@@ -1,10 +1,10 @@
 """Mixture model using EM"""
 from operator import pos
 from typing import AsyncIterable, Tuple
-from matplotlib.pyplot import axis
 import numpy as np
 from numpy.core.fromnumeric import var
 from common import GaussianMixture
+import matplotlib.pyplot as plt
 
 
 def gaussian(X: np.ndarray, mean: np.ndarray, var: float) -> float:
@@ -85,13 +85,13 @@ def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
         GaussianMixture: the new gaussian mixture
     """
     n, K = post.shape
-    d = X.shape[0]
+    d = X.shape[1]
     # n_hat: (K, 1) array of expected no. of points in each component
     n_hat = post.sum(axis=0)
     p = n_hat / n  # (K, 1) mixture weights
     # Updated mus: [K, n] @ [n, d] -> [K, d]
     # taking the advantage numpy broadcasting
-    mu = post.T @ X / n_hat
+    mu = post.T @ X / n_hat[:, None]
     var = np.zeros(K)
     for j in range(K):
         sse = ((X - mu[j])**2).sum(axis=1) @ post[:, j]
@@ -102,12 +102,14 @@ def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
 
 def run(X: np.ndarray, mixture: GaussianMixture,
         post: np.ndarray) -> Tuple[GaussianMixture, np.ndarray, float]:
-    """Runs the mixture model
+    """Runs the mixture model and plots log likelihood history
 
     Args:
         X: (n, d) array holding the data
         post: (n, K) array holding the soft counts
             for all components for all examples
+        K: no. of mixture components
+        seed: random seed
 
     Returns:
         GaussianMixture: the new gaussian mixture
@@ -117,11 +119,13 @@ def run(X: np.ndarray, mixture: GaussianMixture,
     """
     c = 1e-6
     prev_ll = None
+    ll_history = []
     ll = None
 
-    while (prev_ll is None or prev_ll - ll >= c * np.abs(ll)):
+    while (prev_ll is None or ll - prev_ll > c * np.abs(ll)):
         prev_ll = ll
         post, ll = estep(X, mixture)
+        ll_history.append(ll)
         mixture = mstep(X, post)
 
-    return mixture, post, ll
+    return mixture, post, ll, ll_history
