@@ -1,3 +1,5 @@
+from operator import pos
+from test import X_gold
 import numpy as np
 import kmeans
 import common
@@ -66,9 +68,47 @@ def test_naive_em(X: np.ndarray) -> None:
             # Initialize the K-Means
             mixture, post = common.init(X, K, seed)
             mixture, post, ll, ll_history = naive_em.run(X, mixture, post)
-            title = f"EM for K={K}, seed={seed}, ll={ll}"
+            title = f"Naive EM for K={K}, seed={seed}, ll={ll}"
             print(title)
+            common.naive_em_plot(X, mixture, post, title, ll_history)
+
+
+X_incomplete = np.loadtxt("netflix_incomplete.txt")
+X_gold = np.loadtxt("netflix_complete.txt")
+
+
+def run_em(X: np.ndarray) -> None:
+    """
+    Runs the K-Means Algorithm over the dataset and plots the mixtures 
+    for various combinations of K and seed
+
+    Args:
+        X: (n, d) nd-array of Datapoints
+    """
+
+    for K in [1, 6, 12]:
+        for seed in range(0, 5):
+            # Initialize the Mixture Model
+            mixture, post = common.init(X, K, seed)
+            mixture, post, ll, ll_history = em.run(X, mixture, post)
+            title = f"EM on Netflix Data for K={K}, seed={seed}, ll={ll}"
+            print(title)
+            title = "EM Convergence Curve \nK={}, seed={}, ll={:.3f}".format(
+                K, seed, ll)
             common.em_plot(X, mixture, post, title, ll_history)
 
 
-test_naive_em(X)
+X = np.loadtxt("netflix_incomplete.txt")
+
+
+def eval():
+    K = 12
+    seed = 1
+    mixture, post = common.init(X, K, seed)
+    mixture, post, ll, ll_history = em.run(X, mixture, post)
+    X_pred = em.fill_matrix(X, mixture)
+    X_gold = np.loadtxt('netflix_complete.txt')
+    print("RMSE:", common.rmse(X_gold, X_pred))
+
+
+eval()

@@ -82,8 +82,8 @@ def plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
     plt.show()
 
 
-def em_plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
-            title: str, ll_history: list) -> None:
+def naive_em_plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
+                  title: str, ll_history: list) -> None:
     """Plots the mixture model for 2D data"""
     _, K = post.shape
 
@@ -120,6 +120,19 @@ def em_plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
     ax[1].plot(ll_history, "-")
     ax[1].set_xlabel("Iteration")
     ax[1].set_ylabel("Log Likelihood")
+    plt.show()
+
+
+def em_plot(X: np.ndarray, mixture: GaussianMixture, post: np.ndarray,
+            title: str, ll_history: list) -> None:
+    """Plots the EM Algorithm Convergence plot for a Dataset"""
+    _, K = post.shape
+
+    fig, ax = plt.subplots()
+    fig.suptitle(title)
+    ax.plot(ll_history, "-")
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Log Likelihood")
     plt.show()
 
 
