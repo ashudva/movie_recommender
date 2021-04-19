@@ -18,7 +18,42 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         float: log-likelihood of the assignment
 
     """
-    raise NotImplementedError
+    n, _ = X.shape
+    K, _ = mixture.mu.shape
+    post = np.zeros((n, K))
+
+    ll = 0
+    # for every user in the dataset X
+    for i in range(n):
+        # mask will act as C_u
+        mask = (X[i, :] != 0)
+        # for every movie rated
+        for j in range(K):
+            log_likelihood = log_gaussian(X[i, mask], mixture.mu[j, mask],
+                                          mixture.var[j])
+            post[i, j] = np.log(mixture.p[j] + 1e-16) + log_likelihood
+        total = logsumexp(post[i, :])
+        post[i, :] = post[i, :] - total
+        ll += total
+
+    return np.exp(post), ll
+
+
+def log_gaussian(x: np.ndarray, mean: np.ndarray, var: float) -> float:
+    """Computes the log probablity of vector x under a normal distribution
+
+    Args:
+        x: (d, ) array holding the vector's coordinates
+        mean: (d, ) mean of the gaussian
+        var: variance of the gaussian
+
+    Returns:
+        float: the log probability
+    """
+    d = len(x)
+    log_prob = -d / 2.0 * np.log(2 * np.pi * var)
+    log_prob -= 0.5 * ((x - mean)**2).sum() / var
+    return log_prob
 
 
 
